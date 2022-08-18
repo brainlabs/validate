@@ -34,6 +34,36 @@ func (v *Validation) ValidateE(scene ...string) Errors {
 }
 
 // Validate processing
+func (v *Validation) ValidateAll(scene ...string) bool {
+	// has been validated OR has error
+	if v.hasValidated || v.shouldStop() {
+		return v.IsSuccess()
+	}
+
+	// init scene info
+	v.SetScene(scene...)
+	v.sceneFields = v.sceneFieldMap()
+
+	// apply filter rules before validate.
+	if !v.Filtering() && v.StopOnError {
+		return false
+	}
+
+	// apply rule to validate data.
+	for _, rule := range v.rules {
+		rule.Apply(v)
+	}
+
+	v.hasValidated = true
+	if v.hasError {
+		// clear safe data on error.
+		v.safeData = make(map[string]interface{})
+	}
+
+	return v.IsSuccess()
+}
+
+// Validate processing
 func (v *Validation) Validate(scene ...string) bool {
 	// has been validated OR has error
 	if v.hasValidated || v.shouldStop() {
